@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/02/24 21:33:03 (CST) daisuke>
+# Time-stamp: <2025/09/08 13:03:14 (UT+08:00) daisuke>
 #
 
 # importing re module
