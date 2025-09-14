@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/04 20:04:56 (CST) daisuke>
+# Time-stamp: <2025/09/14 20:21:53 (UT+08:00) daisuke>
 #
 
 # importing urllib module
@@ -14,7 +14,7 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # URL of a resource
-url_pi3 = 'https://s3b.astro.ncu.edu.tw/appy_202502/data/numpy_00.data'
+url_pi3 = 'https://s3b.astro.ncu.edu.tw/appy_202509/data/numpy_00.data'
 
 # output file name
 file_output = 'numpy_00.data'
