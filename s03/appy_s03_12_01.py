@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/04 20:10:43 (CST) daisuke>
+# Time-stamp: <2025/09/14 20:22:54 (UT+08:00) daisuke>
 #
 
 # input data file
