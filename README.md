@@ -65,3 +65,5 @@ git clone https://github.com/kinoshitadaisuke/ncu_doing_astrophysics_using_pytho
   - https://colab.research.google.com/drive/1ohCCySyOToUrR2zV-RHFC8RH0-Kiz5hu?usp=sharing
 - Session 02
   - https://colab.research.google.com/drive/157cBm3hg0eQ2PVzbwcCPCD8YuG3AOwb5?usp=sharing
+- Session 03
+  - https://colab.research.google.com/drive/1MJPg1JF91zJR-CZksinUgeZONSO5RLf8?usp=sharing
