@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/14 10:32:09 (UT+08:00) daisuke>
+# Time-stamp: <2025/09/30 21:43:43 (UT+08:00) daisuke>
 #
 
 # importing argparse module
@@ -157,9 +157,9 @@ print (f'reduced chi-squared = {reduced_chi2}')
 
 # fitted a and b
 a_err, b_err, c_err = numpy.sqrt ( numpy.diagonal (pcov) )
-print (f'a = {a_fitted:8.3f} +/- {a_err:8.3f} ({a_err/a_fitted*100.0:8.3f}%)')
-print (f'b = {b_fitted:8.3f} +/- {b_err:8.3f} ({b_err/b_fitted*100.0:8.3f}%)')
-print (f'c = {c_fitted:8.3f} +/- {c_err:8.3f} ({c_err/c_fitted*100.0:8.3f}%)')
+print (f'a = {a_fitted:13.3f} +/- {a_err:13.3f} ({a_err/a_fitted*100.0:13.3f}%)')
+print (f'b = {b_fitted:13.3f} +/- {b_err:13.3f} ({b_err/b_fitted*100.0:13.3f}%)')
+print (f'c = {c_fitted:13.3f} +/- {c_err:13.3f} ({c_err/c_fitted*100.0:13.3f}%)')
 
 # range of data
 x_min = scipy.stats.tmin (data_x)
