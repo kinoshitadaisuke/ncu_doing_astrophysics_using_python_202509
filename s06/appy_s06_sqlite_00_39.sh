@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Time-stamp: <2025/03/24 19:27:54 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/03 13:34:57 (UT+08:00) daisuke>
 #
 
 # exporting database into a CSV file
