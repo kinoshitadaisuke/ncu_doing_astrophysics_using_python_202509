@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Time-stamp: <2025/03/20 21:07:13 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/03 13:34:53 (UT+08:00) daisuke>
 #
 
 # printing usage of ".once" command
