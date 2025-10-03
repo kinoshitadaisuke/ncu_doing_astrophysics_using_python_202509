@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/20 23:07:35 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/03 13:25:24 (UT+08:00) daisuke>
 #
 
 # importing sys module
