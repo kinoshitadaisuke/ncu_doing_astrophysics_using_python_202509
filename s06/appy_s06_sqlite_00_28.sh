@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Time-stamp: <2025/03/24 19:24:37 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/03 13:34:03 (UT+08:00) daisuke>
 #
 
 # creating a table
