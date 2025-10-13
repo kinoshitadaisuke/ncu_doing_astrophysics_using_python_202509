@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/04/03 13:03:41 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/13 14:13:58 (UT+08:00) daisuke>
 #
 
 # importing astropy module
