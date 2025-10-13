@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/26 09:21:54 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/13 13:12:42 (UT+08:00) daisuke>
 #
 
 # importing astropy module
@@ -17,12 +17,9 @@ M_J = astropy.constants.M_jup
 M_E = astropy.constants.M_earth
 
 # printing Solar mass, Jupiter mass, and Earth mass
-print (M_S)
-print ()
-print (M_J)
-print ()
-print (M_E)
-print ()
+print (M_S, "\n")
+print (M_J, "\n")
+print (M_E, "\n")
 
 # value of Jupiter mass in the unit of Solar mass and Earth mass
 print (f'1 M_J = {M_J}')
