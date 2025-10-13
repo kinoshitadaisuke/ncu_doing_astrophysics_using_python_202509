@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/26 09:22:03 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/13 13:14:00 (UT+08:00) daisuke>
 #
 
 # importing astropy module
@@ -11,8 +11,7 @@ import astropy.constants
 L_S = astropy.constants.L_sun
 
 # printing Solar radius, Jupiter radius, and Earth radius
-print (L_S)
-print ()
+print (L_S, "\n")
 
 # amount of 10,000 Solar luminosity
 print (f'    1 L_S = {L_S:g}')
