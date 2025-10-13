@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/03/26 09:21:50 (UT+08:00) daisuke>
+# Time-stamp: <2025/10/13 13:12:05 (UT+08:00) daisuke>
 #
 
 # importing astropy module
@@ -11,8 +11,7 @@ import astropy.constants
 au = astropy.constants.au
 
 # printing au
-print (au)
-print ()
+print (au, "\n")
 
 # parsec
 pc = astropy.constants.pc
@@ -21,8 +20,7 @@ pc = astropy.constants.pc
 unit_km = astropy.units.km
 
 # printing pc
-print (pc)
-print ()
+print (pc, "\n")
 
 # 1 au
 print (f'1 au = {au:g}')
