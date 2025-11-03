@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/05/04 11:01:00 (UT+08:00) daisuke>
+# Time-stamp: <2025/11/03 14:12:02 (UT+08:00) daisuke>
 #
 
 # check of availability of astropy module
