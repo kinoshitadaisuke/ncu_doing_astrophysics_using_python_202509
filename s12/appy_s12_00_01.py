@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/11/14 13:07:05 (UT+08:00) daisuke>
+# Time-stamp: <2025/11/14 15:33:37 (UT+08:00) daisuke>
 #
 
 # importing matplotlib module
@@ -18,7 +18,7 @@ file_data = 'appy_s12_00_00.data'
 file_output = 'appy_s12_00_01.png'
 
 # MJD offset
-mjd_offset = 60000.0
+mjd_offset = 61000.0
 
 # empty numpy arrays for storing data
 data_mjd = numpy.array ([])
@@ -48,7 +48,7 @@ canvas = matplotlib.backends.backend_agg.FigureCanvasAgg (fig)
 ax     = fig.add_subplot (111)
 
 # labels
-ax.set_xlabel ('MJD - 60000 [day]')
+ax.set_xlabel (f'MJD - {mjd_offset} [day]')
 ax.set_ylabel ('Apparent Magnitude [mag]')
 
 # range
