@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/11/14 13:08:13 (UT+08:00) daisuke>
+# Time-stamp: <2025/11/14 15:56:35 (UT+08:00) daisuke>
 #
 
 # importing numpy module
@@ -18,7 +18,7 @@ file_input = 'appy_s12_01_00.data'
 file_output = 'appy_s12_01_07.png'
 
 # best fit period (day)
-p_best = 7.4981 / 24.0
+p_best = 7.4971 / 24.0
 
 # empty numpy arrays for storing data
 data_mjd   = numpy.array ([])
