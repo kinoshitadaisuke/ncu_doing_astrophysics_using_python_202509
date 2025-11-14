@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/11/14 13:07:35 (UT+08:00) daisuke>
+# Time-stamp: <2025/11/14 15:44:17 (UT+08:00) daisuke>
 #
 
 # importing numpy module
@@ -17,8 +17,9 @@ file_input = 'appy_s12_00_00.data'
 # output file name
 file_output = 'appy_s12_00_08.png'
 
-# best fit period (day)
-p_best = 2.0009 / 24
+# best fit period (in hr and in day)
+p_best_hr = 2.0008
+p_best    = p_best_hr / 24
 
 # empty numpy arrays for storing data
 data_mjd   = numpy.array ([])
@@ -61,7 +62,7 @@ ax.invert_yaxis ()
 # plotting data
 ax.plot (data_phase, data_mag, \
          linestyle='None', marker='o', markersize=3, color='blue', \
-         label='lightcurve constructed by the best fit period $P = 2.0010$ hr')
+         label=f'lightcurve constructed by the best fit period $P = {p_best_hr}$ hr')
 ax.legend ()
 
 # saving the plot into a file
