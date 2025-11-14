@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3.13
 
 #
-# Time-stamp: <2025/11/14 13:07:46 (UT+08:00) daisuke>
+# Time-stamp: <2025/11/14 15:46:48 (UT+08:00) daisuke>
 #
 
 # importing numpy module
@@ -48,7 +48,7 @@ canvas = matplotlib.backends.backend_agg.FigureCanvasAgg (fig)
 ax     = fig.add_subplot (111)
 
 # labels
-ax.set_xlabel ('MJD - 60000 [day]')
+ax.set_xlabel ('MJD - 61000 [day]')
 ax.set_ylabel ('Apparent Magnitude [mag]')
 
 # range
@@ -56,7 +56,7 @@ ax.set_ylim (20.4, 21.5)
 ax.invert_yaxis ()
 
 # plotting data
-ax.errorbar (data_mjd - 60000, data_mag, yerr=data_err, \
+ax.errorbar (data_mjd - 61000, data_mag, yerr=data_err, \
              linestyle='None', marker='o', markersize=5, color='blue', \
              ecolor='black', capsize=5, \
              label='synthetic time-series data')
