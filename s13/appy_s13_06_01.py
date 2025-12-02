@@ -1,7 +1,7 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/11/19 09:58:02 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 09:51:34 (UT+08:00) daisuke>
 #
 
 # importing argparse module
@@ -13,92 +13,82 @@ import sys
 # importing pathlib module
 import pathlib
 
-# importing datetime module
-import datetime
+# importing astroquery module
+import astroquery.simbad
+import astroquery.ipac.ned
+import astroquery.mast
 
 # importing astropy module
-import astropy.units
 import astropy.coordinates
+import astropy.units
 
-# importing astroquery module
-import astroquery.esa.jwst
+# importing ssl module
+import ssl
 
-# date/time
-now = datetime.datetime.now ().isoformat ()
+# allow insecure downloading
+ssl._create_default_https_context = ssl._create_unverified_context
 
-# command name
-command = sys.argv[0]
+# units
+u_ha  = astropy.units.hourangle
+u_deg = astropy.units.deg
 
 # constructing parser object
-descr  = "searching JWST images available for download"
+descr  = "downloading HST image"
 parser = argparse.ArgumentParser (description=descr)
 
 # adding arguments
-parser.add_argument ('-o', '--output', default='', \
-                     help='output file name')
-parser.add_argument ('-r', '--radius', type=float, default=1.0, \
-                     help='search radius in arcmin (default: 1)')
-parser.add_argument ('ra', nargs=1, default='00h00m00.000s', \
-                     help='RA of target object (default: 00h00m00.000s)')
-parser.add_argument ('dec', nargs=1, default='00d00m00.00s', \
-                     help='Dec of target object (default: 00d00m00.000s)')
+list_resolver = ['simbad', 'ned']
+parser.add_argument ('-r', '--resolver', choices=list_resolver, \
+                     default='simbad', help='choice of name resolver')
+parser.add_argument ('-t', '--target', default='', help='target name')
+parser.add_argument ('-s', '--radius', type=float, default=0.1, \
+                     help='radius of search area in degree')
 
 # command-line argument analysis
 args = parser.parse_args ()
 
 # input parameters
-file_output   = args.output
-radius_arcmin = args.radius
-ra            = args.ra[0]
-dec           = args.dec[0]
+name_resolver = args.resolver
+target_name   = args.target
+radius_deg    = args.radius * u_deg
 
-# units
-u_ha     = astropy.units.hourangle
-u_deg    = astropy.units.deg
-u_arcmin = astropy.units.arcmin
+# checking target name
+if (target_name == ''):
+    # printing error message
+    print ("No target name is given!")
+    # exit
+    sys.exit ()
 
-# search radius
-radius = radius_arcmin * u_arcmin
+# using name resolver
+if (name_resolver == 'simbad'):
+    query_result = astroquery.simbad.Simbad.query_object (target_name)
+elif (name_resolver == 'ned'):
+    query_result = astroquery.ipac.ned.Ned.query_object (target_name)
+
+# RA and Dec
+RA  = query_result['ra']
+Dec = query_result['dec']
 
 # coordinate
-coord = astropy.coordinates.SkyCoord (ra, dec, unit=(u_ha, u_deg), frame='icrs')
+if (name_resolver == 'simbad'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
+elif (name_resolver == 'ned'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
 
-# coordinate in hh:mm:ss.ss and dd:mm:ss.s format
-coord_str                     = coord.to_string (style='hmsdms')
+coord_str = coord.to_string (style='hmsdms')
 (coord_ra_str, coord_dec_str) = coord_str.split ()
-coord_ra_deg                  = coord.ra.deg
-coord_dec_deg                 = coord.dec.deg
+coord_ra_deg  = coord.ra.deg
+coord_dec_deg = coord.dec.deg
+coord_deg     = f'{coord_ra_deg} {coord_dec_deg}'
     
 # printing coordinate
-print (f'# Coordinate:')
-print (f'#  RA:  {coord_ra_str} = {coord_ra_deg} deg')
-print (f'#  Dec: {coord_dec_str} = {coord_dec_deg} deg')
+print (f'Target Name: {target_name}')
+print (f'  RA:  {coord_ra_str} = {coord_ra_deg} deg')
+print (f'  Dec: {coord_dec_str} = {coord_dec_deg} deg')
 
-# query
-jwst = astroquery.esa.jwst.Jwst.cone_search (coordinate=coord, radius=radius, \
-                                             async_job=True)
+# HST image search
+obs_table = astroquery.mast.Observations.query_region (coord_deg, \
+                                                       radius=radius_deg)
 
-# query result
-query_result = jwst.get_results ()
-
-# writing query result
-with open (file_output, 'w') as fh:
-    # writing header
-    header = f'# obs. ID, calib. level, data type, instrument, energy band\n'
-    fh.write (header)
-    for i in range (len (query_result)):
-        # if the data product is not image, then skip
-        if (query_result["dataproducttype"][i] != 'image'):
-            continue
-        # coordinate
-        coord = astropy.coordinates.SkyCoord (query_result["target_ra"][i], \
-                                              query_result["target_dec"][i], \
-                                              unit=(u_deg, u_deg), frame='icrs')
-        # writing data into file
-        record = f'{query_result["observationid"][i]:36s}' \
-            + f' {query_result["calibrationlevel"][i]:2d}' \
-            + f' {query_result["dataproducttype"][i]:5s}' \
-            + f' {query_result["instrument_name"][i]:12s}' \
-            + f' {query_result["energy_bandpassname"][i]:12s}' \
-            + f' {coord.ra.deg:8.3f} {coord.dec.deg:8.3f}\n'
-        fh.write (record)
+# printing result of the search
+print (f'{obs_table}')
