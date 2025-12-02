@@ -1,7 +1,7 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/11/19 09:58:19 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 11:32:28 (UT+08:00) daisuke>
 #
 
 # importing argparse module
@@ -13,73 +13,85 @@ import sys
 # importing pathlib module
 import pathlib
 
+# importing astroquery module
+import astroquery.simbad
+import astroquery.ipac.ned
+import astroquery.mast
+
 # importing astropy module
-import astropy.io.fits
+import astropy.coordinates
+import astropy.units
+
+# importing ssl module
+import ssl
+
+# allow insecure downloading
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# units
+u_ha  = astropy.units.hourangle
+u_deg = astropy.units.deg
 
 # constructing parser object
-descr  = 'extracting science data from JWST FITS file'
+descr  = "downloading JWST image"
 parser = argparse.ArgumentParser (description=descr)
 
 # adding arguments
-parser.add_argument ('-i', '--input', help='input file')
-parser.add_argument ('-o', '--output', help='output file')
+list_resolver = ['simbad', 'ned']
+parser.add_argument ('-r', '--resolver', choices=list_resolver, \
+                     default='simbad', help='choice of name resolver')
+parser.add_argument ('-t', '--target', default='', help='target name')
+parser.add_argument ('-s', '--radius', type=float, default=0.1, \
+                     help='radius of search area in degree')
 
 # command-line argument analysis
 args = parser.parse_args ()
 
-# file names
-file_input  = args.input
-file_output = args.output
+# input parameters
+name_resolver = args.resolver
+target_name   = args.target
+radius_deg    = args.radius * u_deg
 
-# making pathlib objects
-path_input  = pathlib.Path (file_input)
-path_output = pathlib.Path (file_output)
+# checking target name
+if (target_name == ''):
+    # printing error message
+    print ("No target name is given!")
+    # exit
+    sys.exit ()
 
-# if file is not a FITS file, then skip
-if not (path_input.suffix == '.fits'):
-    # printing message
-    print (f'WARNING:')
-    print (f'WARNING: file "{file_input}" is not a FITS file!')
-    print (f'WARNING: skipping')
-    print (f'WARNING:')
-    # exiting
-    sys.exit (0)
+# using name resolver
+if (name_resolver == 'simbad'):
+    query_result = astroquery.simbad.Simbad.query_object (target_name)
+elif (name_resolver == 'ned'):
+    query_result = astroquery.ipac.ned.Ned.query_object (target_name)
 
-# if file is not a FITS file, then skip
-if not (path_output.suffix == '.fits'):
-    # printing message
-    print (f'WARNING:')
-    print (f'WARNING: file "{file_output}" is not a FITS file!')
-    print (f'WARNING: skipping')
-    print (f'WARNING:')
-    # exiting
-    sys.exit (0)
+# RA and Dec
+RA  = query_result['ra']
+Dec = query_result['dec']
 
-# if file does not exist, then skip
-if not (path_input.exists ()):
-    # printing message
-    print (f'WARNING:')
-    print (f'WARNING: file "{file_input}" does not exist!')
-    print (f'WARNING: skipping')
-    print (f'WARNING:')
-    # exiting
-    sys.exit (0)
+# coordinate
+if (name_resolver == 'simbad'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
+elif (name_resolver == 'ned'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
 
-# if file exists, then skip
-if (path_output.exists ()):
-    # printing message
-    print (f'WARNING:')
-    print (f'WARNING: file "{file_output}" exists!')
-    print (f'WARNING: skipping')
-    print (f'WARNING:')
-    # exiting
-    sys.exit (0)
+coord_str = coord.to_string (style='hmsdms')
+(coord_ra_str, coord_dec_str) = coord_str.split ()
+coord_ra_deg  = coord.ra.deg
+coord_dec_deg = coord.dec.deg
+coord_deg     = f'{coord_ra_deg} {coord_dec_deg}'
+    
+# printing coordinate
+print (f'Target Name: {target_name}')
+print (f'  RA:  {coord_ra_str} = {coord_ra_deg} deg')
+print (f'  Dec: {coord_dec_str} = {coord_dec_deg} deg')
 
-# opening FITS file
-with astropy.io.fits.open (file_input) as hdu:
-    # image of science data
-    image = hdu[1].data
-    # header of science data
-    header = hdu[1].header
-    # writing image and header into new file
-    astropy.io.fits.writeto (file_output, image, header=header)
+# JWST image search
+obs_table \
+    = astroquery.mast.Observations.query_criteria (coordinates=coord_deg, \
+                                                   radius=radius_deg, \
+                                                   obs_collection='JWST', \
+                                                   dataproduct_type='image')
+
+# printing result of the search
+print (f'{obs_table}')
