@@ -1,77 +1,110 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/11/19 09:58:12 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 11:07:56 (UT+08:00) daisuke>
 #
 
 # importing argparse module
 import argparse
 
-# importing pathlib object
+# importing sys module
+import sys
+
+# importing pathlib module
 import pathlib
 
-# importing gzip module
-import gzip
+# importing astroquery module
+import astroquery.simbad
+import astroquery.ipac.ned
+import astroquery.mast
+
+# importing astropy module
+import astropy.coordinates
+import astropy.units
+
+# importing ssl module
+import ssl
+
+# allow insecure downloading
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# units
+u_ha  = astropy.units.hourangle
+u_deg = astropy.units.deg
 
 # constructing parser object
-descr  = "un-compressing gzip compressed file"
+descr  = "downloading HST image"
 parser = argparse.ArgumentParser (description=descr)
 
 # adding arguments
-parser.add_argument ('files', nargs='+', default='', \
-                     help='files')
+list_resolver = ['simbad', 'ned']
+parser.add_argument ('-r', '--resolver', choices=list_resolver, \
+                     default='simbad', help='choice of name resolver')
+parser.add_argument ('-t', '--target', default='', help='target name')
+parser.add_argument ('-s', '--radius', type=float, default=0.1, \
+                     help='radius of search area in degree')
+parser.add_argument ('-i', '--obsid', default='', \
+                     help='Obs ID of the data')
 
 # command-line argument analysis
 args = parser.parse_args ()
 
 # input parameters
-list_files = args.files
+name_resolver = args.resolver
+target_name   = args.target
+radius_deg    = args.radius * u_deg
+obsid         = args.obsid
 
-# processing file one-by-one
-for file_input in list_files:
-    # printing status
-    print (f'Now, processing file "{file_input}"...')
+# checking target name
+if (target_name == ''):
+    # printing error message
+    print ("No target name is given!")
+    # exit
+    sys.exit ()
 
-    # making pathlib object
-    path_input = pathlib.Path (file_input)
+# checking obsid
+if (obsid == ''):
+    # printing error message
+    print ("No obsid is given!")
+    # exit
+    sys.exit ()
 
-    # if extension of file is not ".gz", then skip
-    if not (path_input.suffix == '.gz'):
-        # printing message
-        print (f'WARNING:')
-        print (f'WARNING: suffix of file "{file_input}" is not ".gz"!')
-        print (f'WARNING: skipping...')
-        print (f'WARNING:')
-        # skipping
-        continue
+# using name resolver
+if (name_resolver == 'simbad'):
+    query_result = astroquery.simbad.Simbad.query_object (target_name)
+elif (name_resolver == 'ned'):
+    query_result = astroquery.ipac.ned.Ned.query_object (target_name)
 
-    # if the file does not exist, then skip
-    if not (path_input.exists ()):
-        # printing message
-        print (f'WARNING:')
-        print (f'WARNING: file "{file_input}" does not exist!')
-        print (f'WARNING: skipping...')
-        print (f'WARNING:')
-        # skipping
-        continue
+# RA and Dec
+RA  = query_result['ra']
+Dec = query_result['dec']
 
-    # output file name
-    file_output = path_input.stem
+# coordinate
+if (name_resolver == 'simbad'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
+elif (name_resolver == 'ned'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
 
-    # printing status
-    print (f'  Now, creating file "{file_output}"...')
+coord_str = coord.to_string (style='hmsdms')
+(coord_ra_str, coord_dec_str) = coord_str.split ()
+coord_ra_deg  = coord.ra.deg
+coord_dec_deg = coord.dec.deg
+coord_deg     = f'{coord_ra_deg} {coord_dec_deg}'
     
-    # opening file for reading
-    with gzip.open (file_input, 'rb') as fh_in:
-        # reading data
-        data = fh_in.read ()
-        # opening file for writing
-        with open (file_output, 'wb') as fh_out:
-            # writing data into file
-            fh_out.write (data)
+# printing coordinate
+print (f'Target Name: {target_name}')
+print (f'  RA:  {coord_ra_str} = {coord_ra_deg} deg')
+print (f'  Dec: {coord_dec_str} = {coord_dec_deg} deg')
 
-    # printing status
-    print (f'  Finished creating file "{file_output}"!')
+# HST image search
+obs_table \
+    = astroquery.mast.Observations.query_criteria (coordinates=coord_deg, \
+                                                   radius=radius_deg, \
+                                                   obs_collection='HST', \
+                                                   dataproduct_type='image', \
+                                                   obsid=obsid)
 
-    # printing status
-    print (f'Finished processing file "{file_input}"!')
+# downloading HST image
+data_products = astroquery.mast.Observations.get_product_list (obs_table)
+manifest = astroquery.mast.Observations.download_products (data_products, \
+                                                           productType="SCIENCE")
