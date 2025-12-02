@@ -1,7 +1,7 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/11/19 09:58:24 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 12:20:05 (UT+08:00) daisuke>
 #
 
 # importing argparse module
@@ -13,123 +13,92 @@ import sys
 # importing pathlib module
 import pathlib
 
-# importing datetime module
-import datetime
-
-# importing numpy module
-import numpy
+# importing astroquery module
+import astroquery.simbad
+import astroquery.ipac.ned
+import astroquery.mast
 
 # importing astropy module
-import astropy.table
-import astropy.visualization
+import astropy.coordinates
+import astropy.units
 
-# importing scikit-image module
-import skimage.transform
+# importing ssl module
+import ssl
 
-# importing astroalign module
-import astroalign
+# allow insecure downloading
+ssl._create_default_https_context = ssl._create_unverified_context
 
-# importing matplotlib module
-import matplotlib.figure
-import matplotlib.backends.backend_agg
-
-# date/time
-now = datetime.datetime.now ()
+# units
+u_ha  = astropy.units.hourangle
+u_deg = astropy.units.deg
 
 # constructing parser object
-descr  = 'aligning image'
+descr  = "downloading JWST image"
 parser = argparse.ArgumentParser (description=descr)
 
 # adding arguments
-parser.add_argument ('-n', '--number', type=int, default=50, \
-                     help='maximum number of control sources (default: 50)')
-parser.add_argument ('catalogue1', nargs=1, help='catalogue file 1')
-parser.add_argument ('catalogue2', nargs=1, help='catalogue file 2')
+list_resolver = ['simbad', 'ned']
+parser.add_argument ('-r', '--resolver', choices=list_resolver, \
+                     default='simbad', help='choice of name resolver')
+parser.add_argument ('-t', '--target', default='', help='target name')
+parser.add_argument ('-s', '--radius', type=float, default=0.1, \
+                     help='radius of search area in degree')
 
 # command-line argument analysis
 args = parser.parse_args ()
 
-# file names
-file_cat1       = args.catalogue1[0]
-file_cat2       = args.catalogue2[0]
-n_controlpoints = args.number
+# input parameters
+name_resolver = args.resolver
+target_name   = args.target
+radius_deg    = args.radius * u_deg
 
-# making pathlib objects
-path_cat1  = pathlib.Path (file_cat1)
-path_cat2  = pathlib.Path (file_cat2)
-
-# check of catalogue file name
-if not ( (path_cat1.suffix == '.cat') and (path_cat2.suffix == '.cat') ):
-    # printing message
-    print (f'ERROR: Input file must be a catalogue file (*.cat).')
-    print (f'ERROR: catalogue file 1 = "{file_cat1}"')
-    print (f'ERROR: catalogue file 2 = "{file_cat2}"')
+# checking target name
+if (target_name == ''):
+    # printing error message
+    print ("No target name is given!")
     # exit
     sys.exit ()
 
-# existence checks
-if not (path_cat1.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_cat1}" does not exist.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
-if not (path_cat2.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_cat2}" does not exist.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
+# using name resolver
+if (name_resolver == 'simbad'):
+    query_result = astroquery.simbad.Simbad.query_object (target_name)
+elif (name_resolver == 'ned'):
+    query_result = astroquery.ipac.ned.Ned.query_object (target_name)
 
-# reading catalogue from a file
-table_source1 = astropy.table.Table.read (file_cat1, \
-                                          format='ascii.commented_header')
-table_source2 = astropy.table.Table.read (file_cat2, \
-                                          format='ascii.commented_header')
+# RA and Dec
+RA  = query_result['ra']
+Dec = query_result['dec']
 
-# (x, y) coordinates of sources
-list_source1_x = list (table_source1['xcentroid'])
-list_source1_y = list (table_source1['ycentroid'])
-list_source2_x = list (table_source2['xcentroid'])
-list_source2_y = list (table_source2['ycentroid'])
-position_1     = numpy.transpose ( (list_source1_x, list_source1_y) )
-position_2     = numpy.transpose ( (list_source2_x, list_source2_y) )
+# coordinate
+if (name_resolver == 'simbad'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
+elif (name_resolver == 'ned'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
 
-# finding star-to-star matching
-transf, (list_matched_1, list_matched_2) \
-    = astroalign.find_transform (position_1, position_2, \
-                                 max_control_points=n_controlpoints)
+coord_str = coord.to_string (style='hmsdms')
+(coord_ra_str, coord_dec_str) = coord_str.split ()
+coord_ra_deg  = coord.ra.deg
+coord_dec_deg = coord.dec.deg
+coord_deg     = f'{coord_ra_deg} {coord_dec_deg}'
+    
+# printing coordinate
+print (f'Target Name: {target_name}')
+print (f'  RA:  {coord_ra_str} = {coord_ra_deg} deg')
+print (f'  Dec: {coord_dec_str} = {coord_dec_deg} deg')
 
-# transformation
-list_matched_1_aligned \
-    = astroalign.matrix_transform (list_matched_1, transf.params)
+# JWST image search
+obs_table \
+    = astroquery.mast.Observations.query_criteria (coordinates=coord_deg, \
+                                                   radius=radius_deg, \
+                                                   obs_collection='JWST', \
+                                                   dataproduct_type='image')
 
-# printing results
-print (f'#')
-print (f'# result of image alignment')
-print (f'#')
-print (f'#   date/time = {now}')
-print (f'#')
-print (f'# input files')
-print (f'#')
-print (f'#   catalogue file 1 = {file_cat1}')
-print (f'#   catalogue file 2 = {file_cat2}')
-print (f'#')
-print (f'# transformation matrix')
-print (f'#')
-print (f'# [')
-print (f'#  [{transf.params[0][0]:11.6f}, {transf.params[0][1]:11.6f}, {transf.params[0][2]:11.6f}],')
-print (f'#  [{transf.params[1][0]:11.6f}, {transf.params[1][1]:11.6f}, {transf.params[1][2]:11.6f}],')
-print (f'#  [{transf.params[2][0]:11.6f}, {transf.params[2][1]:11.6f}, {transf.params[2][2]:11.6f}]')
-print (f'# ]')
-print (f'#')
-print (f'#')
-print (f'# list of matched stars')
-print (f'#')
-for i in range ( len (list_matched_1) ):
-    print (f'({list_matched_1[i][0]:8.3f}, {list_matched_1[i][1]:8.3f})', \
-           f'on 1st image', \
-           f'==> ({list_matched_2[i][0]:8.3f}, {list_matched_2[i][1]:8.3f})', \
-           f'on 2nd image')
+# printing result of the search
+print (f'# ObsID, instrument, filter, exptime, calib level, target name')
+for i in range (len (obs_table)):
+    print (f'{obs_table[i]["obsid"]:9s}', \
+           f'{obs_table[i]["instrument_name"]:12s}', \
+           f'{obs_table[i]["filters"]:10s}', \
+           f'{obs_table[i]["t_exptime"]:6.1f}', \
+           f'{obs_table[i]["calib_level"]}', \
+           f'{obs_table[i]["target_name"]}')
