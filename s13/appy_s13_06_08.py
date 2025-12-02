@@ -1,7 +1,7 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/11/19 09:58:28 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 11:39:37 (UT+08:00) daisuke>
 #
 
 # importing argparse module
@@ -13,257 +13,98 @@ import sys
 # importing pathlib module
 import pathlib
 
-# importing datetime module
-import datetime
-
-# importing numpy module
-import numpy
+# importing astroquery module
+import astroquery.simbad
+import astroquery.ipac.ned
+import astroquery.mast
 
 # importing astropy module
-import astropy.table
-import astropy.visualization
+import astropy.coordinates
+import astropy.units
 
-# importing scikit-image module
-import skimage.transform
+# importing ssl module
+import ssl
 
-# importing astroalign module
-import astroalign
+# allow insecure downloading
+ssl._create_default_https_context = ssl._create_unverified_context
 
-# importing matplotlib module
-import matplotlib.figure
-import matplotlib.backends.backend_agg
-
-# date/time
-now = datetime.datetime.now ()
+# units
+u_ha  = astropy.units.hourangle
+u_deg = astropy.units.deg
 
 # constructing parser object
-descr  = 'aligning image'
+descr  = "downloading JWST image"
 parser = argparse.ArgumentParser (description=descr)
 
 # adding arguments
-parser.add_argument ('-o', '--file-output', default='', \
-                     help='output figure file')
-parser.add_argument ('-n', '--number', type=int, default=50, \
-                     help='maximum number of control sources (default: 50)')
-parser.add_argument ('-r', '--resolution', type=float, default=150.0, \
-                     help='resolution of output image in DPI (default: 150)')
-parser.add_argument ('catalogue1', nargs=1, help='catalogue file 1')
-parser.add_argument ('catalogue2', nargs=1, help='catalogue file 2')
-parser.add_argument ('fits1', nargs=1, help='FITS file 1')
-parser.add_argument ('fits2', nargs=1, help='FITS file 2')
+list_resolver = ['simbad', 'ned']
+parser.add_argument ('-r', '--resolver', choices=list_resolver, \
+                     default='simbad', help='choice of name resolver')
+parser.add_argument ('-t', '--target', default='', help='target name')
+parser.add_argument ('-s', '--radius', type=float, default=0.1, \
+                     help='radius of search area in degree')
+parser.add_argument ('-i', '--obsid', default='', \
+                     help='Obs ID of the data')
 
 # command-line argument analysis
 args = parser.parse_args ()
 
-# file names
-file_cat1       = args.catalogue1[0]
-file_cat2       = args.catalogue2[0]
-file_fits1      = args.fits1[0]
-file_fits2      = args.fits2[0]
-file_fig        = args.file_output
-n_controlpoints = args.number
-resolution      = args.resolution
+# input parameters
+name_resolver = args.resolver
+target_name   = args.target
+radius_deg    = args.radius * u_deg
+obsid         = args.obsid
 
-# making pathlib objects
-path_cat1  = pathlib.Path (file_cat1)
-path_cat2  = pathlib.Path (file_cat2)
-path_fits1 = pathlib.Path (file_fits1)
-path_fits2 = pathlib.Path (file_fits2)
-path_fig   = pathlib.Path (file_fig)
-
-# check of output file name
-if not ( (path_fig.suffix == '.eps') or (path_fig.suffix == '.pdf') \
-         or (path_fig.suffix == '.png') or (path_fig.suffix == '.ps') ):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: Figure file name must be either EPS, PDF, PNG, or PS.')
-    print (f'ERROR:')
+# checking target name
+if (target_name == ''):
+    # printing error message
+    print ("No target name is given!")
     # exit
     sys.exit ()
 
-# check of catalogue file name
-if not ( (path_cat1.suffix == '.cat') and (path_cat2.suffix == '.cat') ):
-    # printing message
-    print (f'ERROR: Input file must be a catalogue file (*.cat).')
-    print (f'ERROR: catalogue file 1 = "{file_cat1}"')
-    print (f'ERROR: catalogue file 2 = "{file_cat2}"')
+# checking obsid
+if (obsid == ''):
+    # printing error message
+    print ("No obsid is given!")
     # exit
     sys.exit ()
 
-# check of FITS file name
-if not ( (path_fits1.suffix == '.fits') and (path_fits2.suffix == '.fits') ):
-    # printing message
-    print (f'ERROR: Input file must be a FITS file (*.fits).')
-    print (f'ERROR: FITS file 1 = "{file_fits1}"')
-    print (f'ERROR: FITS file 2 = "{file_fits2}"')
-    # exit
-    sys.exit ()
+# using name resolver
+if (name_resolver == 'simbad'):
+    query_result = astroquery.simbad.Simbad.query_object (target_name)
+elif (name_resolver == 'ned'):
+    query_result = astroquery.ipac.ned.Ned.query_object (target_name)
 
-# existence checks
-if not (path_cat1.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_cat1}" does not exist.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
-if not (path_cat2.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_cat2}" does not exist.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
-if not (path_fits1.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_fits1}" does not exist.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
-if not (path_fits2.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_fits2}" does not exist.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
-if (path_fig.exists ()):
-    # printing message
-    print (f'ERROR:')
-    print (f'ERROR: file "{file_fig}" exists.')
-    print (f'ERROR:')
-    # exit
-    sys.exit ()
+# RA and Dec
+RA  = query_result['ra']
+Dec = query_result['dec']
 
-# function to read a FITS file
-def read_fits (file_fits):
-    # reading FITS file
-    with astropy.io.fits.open (file_fits) as hdu:
-        # reading header and image
-        header = hdu[0].header
-        image  = hdu[0].data
-        # if no image in PrimaryHDU, then read next HDU
-        if (header['NAXIS'] == 0):
-            header = hdu[1].header
-            image  = hdu[1].data
-    # returning header and image
-    return (header, image)
+# coordinate
+if (name_resolver == 'simbad'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
+elif (name_resolver == 'ned'):
+    coord = astropy.coordinates.SkyCoord (RA[0], Dec[0], unit=(u_deg, u_deg))
 
-# reading catalogue from a file
-table_source1 = astropy.table.Table.read (file_cat1, \
-                                          format='ascii.commented_header')
-table_source2 = astropy.table.Table.read (file_cat2, \
-                                          format='ascii.commented_header')
+coord_str = coord.to_string (style='hmsdms')
+(coord_ra_str, coord_dec_str) = coord_str.split ()
+coord_ra_deg  = coord.ra.deg
+coord_dec_deg = coord.dec.deg
+coord_deg     = f'{coord_ra_deg} {coord_dec_deg}'
+    
+# printing coordinate
+print (f'Target Name: {target_name}')
+print (f'  RA:  {coord_ra_str} = {coord_ra_deg} deg')
+print (f'  Dec: {coord_dec_str} = {coord_dec_deg} deg')
 
-# (x, y) coordinates of sources
-list_source1_x = list (table_source1['xcentroid'])
-list_source1_y = list (table_source1['ycentroid'])
-list_source2_x = list (table_source2['xcentroid'])
-list_source2_y = list (table_source2['ycentroid'])
-position_1     = numpy.transpose ( (list_source1_x, list_source1_y) )
-position_2     = numpy.transpose ( (list_source2_x, list_source2_y) )
+# JWST image search
+obs_table \
+    = astroquery.mast.Observations.query_criteria (coordinates=coord_deg, \
+                                                   radius=radius_deg, \
+                                                   obs_collection='JWST', \
+                                                   dataproduct_type='image', \
+                                                   obsid=obsid)
 
-# finding star-to-star matching
-transf, (list_matched_1, list_matched_2) \
-    = astroalign.find_transform (position_1, position_2, \
-                                 max_control_points=n_controlpoints)
-
-# transformation
-list_matched_1_aligned \
-    = astroalign.matrix_transform (list_matched_1, transf.params)
-
-# printing results
-print (f'#')
-print (f'# result of image alignment')
-print (f'#')
-print (f'#   date/time = {now}')
-print (f'#')
-print (f'# input files')
-print (f'#')
-print (f'#   catalogue file 1 = {file_cat1}')
-print (f'#   catalogue file 2 = {file_cat2}')
-print (f'#')
-print (f'# transformation matrix')
-print (f'#')
-print (f'# [')
-print (f'#  [{transf.params[0][0]:11.6f}, {transf.params[0][1]:11.6f}, {transf.params[0][2]:11.6f}],')
-print (f'#  [{transf.params[1][0]:11.6f}, {transf.params[1][1]:11.6f}, {transf.params[1][2]:11.6f}],')
-print (f'#  [{transf.params[2][0]:11.6f}, {transf.params[2][1]:11.6f}, {transf.params[2][2]:11.6f}]')
-print (f'# ]')
-print (f'#')
-print (f'#')
-print (f'# list of matched stars')
-print (f'#')
-for i in range ( len (list_matched_1) ):
-    print (f'({list_matched_1[i][0]:8.3f}, {list_matched_1[i][1]:8.3f})', \
-           f'on 1st image', \
-           f'==> ({list_matched_2[i][0]:8.3f}, {list_matched_2[i][1]:8.3f})', \
-           f'on 2nd image')
-
-# reading FITS files
-(header1, image1) = read_fits (file_fits1)
-(header2, image2) = read_fits (file_fits2)
-
-# byte swap
-# data stored in FITS file is network byte-order (big endian).
-# Intel/AMD CPUs use little endian.
-#
-# if you are using big endian CPU, comment out following two lines.
-#
-image1 = image1.byteswap ().view (image1.dtype.newbyteorder ('S'))
-image2 = image2.byteswap ().view (image2.dtype.newbyteorder ('S'))
-
-# aligning 1st image to 2nd image
-st = skimage.transform.SimilarityTransform (scale=transf.scale, \
-                                            rotation=transf.rotation, \
-                                            translation=transf.translation)
-image1_aligned = skimage.transform.warp (image1, st.inverse)
-
-# marker and colour names for matplotlib
-markers = ['o', 'v', '^', 's', 'p', 'h', '8']
-colours = ['maroon', 'red', 'coral', 'bisque', 'orange', \
-           'wheat', 'yellow', 'green', 'lime', 'aqua', \
-           'skyblue', 'blue', 'indigo', 'violet', 'pink']
-
-# making objects "fig" and "ax"
-fig    = matplotlib.figure.Figure ()
-canvas = matplotlib.backends.backend_agg.FigureCanvasAgg (fig)
-ax1    = fig.add_subplot (121)
-ax2    = fig.add_subplot (122)
-
-# range of x and y axes
-ax1.set_xlim (0, 2048)
-ax1.set_ylim (0, 2048)
-ax2.set_xlim (0, 2048)
-ax2.set_ylim (0, 2048)
-
-# plotting first image
-norm1 \
-    = astropy.visualization.mpl_normalize.ImageNormalize \
-    ( stretch=astropy.visualization.HistEqStretch (image1) )
-im1 = ax1.imshow (image1_aligned, origin='lower', cmap='bone', norm=norm1)
-for i in range ( len (list_matched_1_aligned) ):
-    i_marker = i % len (markers)
-    i_colour = i % len (colours)
-    ax1.plot (list_matched_1_aligned[i][0], list_matched_1_aligned[i][1], \
-              marker=markers[i_marker], color=colours[i_colour], \
-              markersize=8, fillstyle='none')
-ax1.set_title ('First Image')
-
-# plotting second image
-norm2 \
-    = astropy.visualization.mpl_normalize.ImageNormalize \
-    ( stretch=astropy.visualization.HistEqStretch (image2) )
-im2 = ax2.imshow (image2, origin='lower', cmap='bone', norm=norm2)
-for i in range ( len (list_matched_2) ):
-    i_marker = i % len (markers)
-    i_colour = i % len (colours)
-    ax2.plot (list_matched_2[i][0], list_matched_2[i][1], \
-              marker=markers[i_marker], color=colours[i_colour], \
-              markersize=8, fillstyle='none')
-ax2.set_title ('Second Image')
-
-# writing to a file
-fig.tight_layout ()
-fig.savefig (file_fig, dpi=resolution)
+# downloading JWST image
+data_products = astroquery.mast.Observations.get_product_list (obs_table)
+manifest = astroquery.mast.Observations.download_products (data_products, \
+                                                           productType="SCIENCE")
