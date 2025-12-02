@@ -1,60 +1,85 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/11/19 09:58:16 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 11:21:42 (UT+08:00) daisuke>
 #
 
 # importing argparse module
 import argparse
 
-# importing sys module
-import sys
-
-# importing pathlib module
-import pathlib
-
 # importing astropy module
 import astropy.io.fits
+import astropy.wcs
+import astropy.visualization
 
-# constructing parser object
-descr  = 'showing structure of FITS files'
+# importing matplotlib module
+import matplotlib.figure
+import matplotlib.backends.backend_agg
+
+# construction pf parser object
+descr  = 'Making a PNG file from a FITS file'
 parser = argparse.ArgumentParser (description=descr)
 
 # adding arguments
-parser.add_argument ('files', nargs='+', help='FITS files')
+parser.add_argument ('-i', '--input', \
+                     help='input FITS file')
+parser.add_argument ('-o', '--output', \
+                     help='output PNG file')
+parser.add_argument ('-t', '--title', \
+                     help='title of output image')
+parser.add_argument ('-c', '--cmap', default='gray', \
+                     help='colour map (default: gray)')
+parser.add_argument ('-r', '--resolution', type=float, default=150.0, \
+                     help='resolution of output image in DPI (default: 150)')
+parser.add_argument ('-w', '--wcs', action='store_true', default=False, \
+                     help='use WCS (default: False)')
 
 # command-line argument analysis
 args = parser.parse_args ()
 
-# file names
-list_files = args.files
+# input parameters
+file_input     = args.input
+file_output    = args.output
+title          = args.title
+colourmap      = args.cmap
+resolution_dpi = args.resolution
+use_wcs        = args.wcs
 
-# processing files one-by-one
-for file_fits in list_files:
-    # making pathlib object
-    path_fits = pathlib.Path (file_fits)
+# opening FITS file
+with astropy.io.fits.open (file_input) as hdu_list:
+    # printing HDU information
+    print (f'{hdu_list.info ()}')
+    
+    # reading FITS header, WCS information, and image data
+    header = hdu_list[1].header
+    wcs    = astropy.wcs.WCS (header)
+    image  = hdu_list[1].data
 
-    # if file is not a FITS file, then skip
-    if not (path_fits.suffix == '.fits'):
-        # printing message
-        print (f'WARNING:')
-        print (f'WARNING: file "{file_fits}" is not a FITS file!')
-        print (f'WARNING: skipping')
-        print (f'WARNING:')
-        # skipping
-        continue
+# making objects "fig" and "ax"
+fig    = matplotlib.figure.Figure ()
+canvas = matplotlib.backends.backend_agg.FigureCanvasAgg (fig)
+if (use_wcs):
+    ax = fig.add_subplot (111, projection=wcs)
+else:
+    ax = fig.add_subplot (111)
 
-    # if file does not exist, then skip
-    if not (path_fits.exists ()):
-        # printing message
-        print (f'WARNING:')
-        print (f'WARNING: file "{file_fits}" does not exist!')
-        print (f'WARNING: skipping')
-        print (f'WARNING:')
-        # skipping
-        continue
+# axes
+ax.set_title (title)
+if (use_wcs):
+    ax.set_xlabel ('Right Ascension')
+    ax.set_ylabel ('Declination')
+else:
+    ax.set_xlabel ('X [pixel]')
+    ax.set_ylabel ('Y [pixel]')
 
-    # opening FITS file
-    with astropy.io.fits.open (file_fits) as hdu:
-        # printing HDU
-        print (hdu.info ())
+# plotting image
+norm = astropy.visualization.mpl_normalize.ImageNormalize \
+    ( stretch=astropy.visualization.HistEqStretch (image) )
+im = ax.imshow (image, origin='lower', cmap=colourmap, norm=norm)
+fig.colorbar (im)
+
+# printing a message
+print (f'{file_input} ==> {file_output}')
+
+# saving file
+fig.savefig (file_output, dpi=resolution_dpi)
