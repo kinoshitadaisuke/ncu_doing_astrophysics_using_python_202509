@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/02 11:39:37 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/02 14:12:58 (UT+08:00) daisuke>
 #
 
 # importing argparse module
@@ -106,5 +106,7 @@ obs_table \
 
 # downloading JWST image
 data_products = astroquery.mast.Observations.get_product_list (obs_table)
-manifest = astroquery.mast.Observations.download_products (data_products, \
+filtered = astroquery.mast.Observations.filter_products (data_products, \
+                                                         productSubGroupDescription='I2D')
+manifest = astroquery.mast.Observations.download_products (filtered, \
                                                            productType="SCIENCE")
