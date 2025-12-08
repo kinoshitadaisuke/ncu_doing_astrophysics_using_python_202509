@@ -1,7 +1,7 @@
-#!/usr/pkg/bin/python3.13
+#!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/05/29 17:23:13 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/08 22:56:42 (UT+08:00) daisuke>
 #
 
 # importing datetime module
