@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/08 22:57:18 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/09 21:29:54 (UT+08:00) daisuke>
 #
 
 # importing gzip module
@@ -42,7 +42,7 @@ majorbody = {
 }
 
 # number of asteroids to process
-n_asteroids = 5000
+n_asteroids = 10000
 
 # counter
 n_jt = 0
