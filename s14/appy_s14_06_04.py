@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/08 22:57:31 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/09 22:02:09 (UT+08:00) daisuke>
 #
 
 # importing datetime module
@@ -34,7 +34,7 @@ i = 0
 # number of major bodies
 n_major = 10
 # number of minor bodies
-n_minor = 5000
+n_minor = 10000
 
 # opening data file
 with open (file_data, 'r') as fh:
