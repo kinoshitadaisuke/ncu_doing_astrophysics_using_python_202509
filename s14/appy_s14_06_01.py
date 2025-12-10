@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/08 22:57:14 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/09 21:27:20 (UT+08:00) daisuke>
 #
 
 # importing gzip module
@@ -17,7 +17,7 @@ file_mpcorb = 'MPCORB.DAT.gz'
 file_output = 'trojan.list'
 
 # number of asteroids to process
-n_asteroids = 5000
+n_asteroids = 10000
 
 # dictionary to store orbital elements
 dic_elements = {}
