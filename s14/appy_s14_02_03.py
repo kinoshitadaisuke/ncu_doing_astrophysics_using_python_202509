@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/08 22:55:24 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/09 20:50:24 (UT+08:00) daisuke>
 #
 
 # importing astropy module
@@ -11,7 +11,7 @@ import astropy.time
 import astroquery.jplhorizons
 
 # date/time
-t_str = '2025-07-01T12:00:00'
+t_str = '2026-01-01T12:00:00'
 t     = astropy.time.Time (t_str, scale='utc', format='isot')
 
 # target list
