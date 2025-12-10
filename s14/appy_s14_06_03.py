@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/08 22:57:24 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/09 21:42:22 (UT+08:00) daisuke>
 #
 
 # importing gzip module
@@ -139,7 +139,7 @@ majorbody = [
 ]
 
 # number of minor bodies
-n_minorbody = 5000
+n_minorbody = 10000
 
 # reading simulation from file
 sim            = rebound.Simulation (file_sim)
