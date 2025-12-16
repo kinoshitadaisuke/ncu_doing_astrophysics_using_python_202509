@@ -1,7 +1,7 @@
 #!/usr/pkg/bin/python3
 
 #
-# Time-stamp: <2025/12/15 14:55:25 (UT+08:00) daisuke>
+# Time-stamp: <2025/12/16 11:57:47 (UT+08:00) daisuke>
 #
 
 # importing numpy module
@@ -15,7 +15,7 @@ import matplotlib.backends.backend_agg
 file_data = 'appy_s15_01_00.data'
 
 # figure file
-file_fig = 'appy_s15_01_01.pdf'
+file_fig = 'appy_s15_01_01.png'
 
 # lists for storing data
 list_a_x = []
